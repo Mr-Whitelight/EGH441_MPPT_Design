@@ -1,3 +1,7 @@
+%EGH451 Assessment 1
+%Author: Ethan Yun Sang CHAN
+%Student ID: n12622401
+
 clear all; close all; clc
 
 %% Module parameters (datasheet STC)
@@ -5,8 +9,8 @@ Vmpp = 37.6;      % V at MPP
 Voc  = 45.3;      % V open circuit
 Impp = 5.32;      % A at MPP
 Isc  = 5.84;      % A short circuit
-ki   = 0.000373;  % Isc temp coefficient (A/K)
-kv   = -0.00281;  % Voc temp coefficient (V/K)
+ki   = 0.0373;    % Isc temp coefficient (A/K)
+kv   = -0.2810;   % Voc temp coefficient (V/K)
 
 Tstc = 25 + 273.15;   % STC temperature (K)
 Gstc = 1000;          % STC irradiance (W/m²)
@@ -18,7 +22,7 @@ np = 2;    % number of parallel strings
 % Other operating conditions (module level)
 G_600 = 600;           % 600 W/m²
 G_200 = 200;           % 200 W/m²
-G_1000 = 1000;          %1000 W/m²
+G_1000 = 1000;         %1000 W/m²
 T_5 = 5 + 273.15;   
 T_45 = 45 + 273.15;  
 
@@ -94,77 +98,6 @@ for i = 1:points
     I_200G(i) = I;
 end
 
-
-
-
-
-
-
-
-
-
-
-
-%% ----- 4. Compute Array I‑V curves for three Conditions (STC), (T = 5°C, 1000 W/m2) & (T = 45°C, 200 W/m2) -----
-
-% STC (1000 W/m², 25°C)
-V_stc_array = linspace(0, Voc, points);
-I_stc_array = zeros(1, points);
-for i = 1:points
-    V = V_stc_array(i);
-    I = Iph;   % initial guess
-    for iter = 1:10
-        I = Iph - Io * (exp((V + I*Rs)/Vt) - 1);
-    end
-    I_stc_array(i) = I;
-end
-
-
-% 1000 W/m², 5°C
-[Iscgt_1000G_5C, Vocgt_1000G_5C, Voct_1000G_5C, Vtt_1000G_5C, Iot_1000G_5C] = ...
-    FourParaCorr(Isc, Voc, ki, kv, T_5, Tstc, Vt, G_1000, Gstc);
-V_1000G_5C = linspace(0, Vocgt_1000G_5C, points);
-I_1000G_5C = zeros(1, points);
-for i = 1:points
-    V = V_1000G_5C(i);
-    I = Iscgt_1000G_5C;
-    for iter = 1:10
-        I = Iscgt_1000G_5C - Iot_1000G_5C * (exp((V + I*Rs)/Vtt_1000G_5C) - 1);
-    end
-    I_1000G_5C(i) = I;
-end
-
-
-
-
-% 200 W/m², 45°C
-[Iscgt_200G_45C, Vocgt_200G_45C, Voct_200G_45C, Vtt_200G_45C, Iot_200G_45C] = ...
-    FourParaCorr(Isc, Voc, ki, kv, T_45, Tstc, Vt, G_200, Gstc);
-V_200G_45C = linspace(0, Vocgt_200G_45C, points);
-I_200G_45C = zeros(1, points);
-for i = 1:points
-    V = V_200G_45C(i);
-    I = Iscgt_200G_45C;
-    for iter = 1:10
-        I = Iscgt_200G_45C - Iot_200G_45C * (exp((V + I*Rs)/Vtt_200G_45C) - 1);
-    end
-    I_200G_45C(i) = I;
-end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 %% ----- 4. Compute module MPP (before scaling) -----
 % STC module
 P_mod_stc = V_stc .* I_stc;
@@ -184,21 +117,50 @@ P_mod_200G = V_200G .* I_200G;
 Vmpp_mod_200G = V_200G(idx_mod_200G);
 Impp_mod_200G = I_200G(idx_mod_200G);
 
+%% ----- 5. Compute Array I‑V curves for three Conditions (STC), (T = 5°C, 1000 W/m2) & (T = 45°C, 200 W/m2) -----
 
+% STC (1000 W/m², 25°C)
+V_stc_array = linspace(0, Voc, points);
+I_stc_array = zeros(1, points);
+for i = 1:points
+    V = V_stc_array(i);
+    I = Iph;   % initial guess
+    for iter = 1:10
+        I = Iph - Io * (exp((V + I*Rs)/Vt) - 1);
+    end
+    I_stc_array(i) = I;
+end
 
+% 1000 W/m², 5°C
+[Iscgt_1000G_5C, Vocgt_1000G_5C, Voct_1000G_5C, Vtt_1000G_5C, Iot_1000G_5C] = ...
+    FourParaCorr(Isc, Voc, ki, kv, T_5, Tstc, Vt, G_1000, Gstc);
+V_1000G_5C = linspace(0, Vocgt_1000G_5C, points);
+I_1000G_5C = zeros(1, points);
+for i = 1:points
+    V = V_1000G_5C(i);
+    I = Iscgt_1000G_5C;
+    for iter = 1:10
+        I = Iscgt_1000G_5C - Iot_1000G_5C * (exp((V + I*Rs)/Vtt_1000G_5C) - 1);
+    end
+    I_1000G_5C(i) = I;
+end
 
-%% ----- 5. Compute Array MPP for three Conditions (STC), (T = 5°C, 1000 W/m2) & (T = 45°C, 200 W/m2)-----
+% 200 W/m², 45°C
+[Iscgt_200G_45C, Vocgt_200G_45C, Voct_200G_45C, Vtt_200G_45C, Iot_200G_45C] = ...
+    FourParaCorr(Isc, Voc, ki, kv, T_45, Tstc, Vt, G_200, Gstc);
+V_200G_45C = linspace(0, Vocgt_200G_45C, points);
+I_200G_45C = zeros(1, points);
+for i = 1:points
+    V = V_200G_45C(i);
+    I = Iscgt_200G_45C;
+    for iter = 1:10
+        I = Iscgt_200G_45C - Iot_200G_45C * (exp((V + I*Rs)/Vtt_200G_45C) - 1);
+    end
+    I_200G_45C(i) = I;
+end
+
+%% ----- 6. Compute Array MPP for three Conditions -----
 % STC module
-%{ 
-No need as already done in previous
-P_stc_array = V_stc_array .* I_stc_array;
-[Pmax_stc_array, idx_stc_array] = max(P_stc_array);
-Vmpp_stc_array = V_stc_array(idx_stc_array);
-Impp_stc_array = I_stc_array(idx_stc_array);
-%}
-
-
-% 1000 W/m², 5°C PV Panel
 P_1000G_5C = V_1000G_5C .* I_1000G_5C;
 [Pmax_1000G_5C, idx_1000G_5C] = max(P_1000G_5C);
 Vmpp_1000G_5C = V_1000G_5C(idx_1000G_5C);
@@ -210,9 +172,7 @@ P_200G_45C = V_200G_45C .* I_200G_45C;
 Vmpp_200G_45C = V_200G_45C(idx_200G_45C);
 Impp_200G_45C = I_200G_45C(idx_200G_45C);
 
-
-
-%% ----- 5. Scale to array level (ns series, np parallel) -----
+%% ----- 7. Scale to array level (ns series, np parallel) -----
 V_array_stc  = V_stc * ns;
 I_array_stc  = I_stc * np;
 P_array_stc  = V_array_stc .* I_array_stc;
@@ -225,7 +185,6 @@ V_array_200G = V_200G * ns;
 I_array_200G = I_200G * np;
 P_array_200G = V_array_200G .* I_array_200G;
 
-
 V_array_1000G_5C = V_1000G_5C * ns;
 I_array_1000G_5C = I_1000G_5C * np;
 P_array_1000G_5C = V_array_1000G_5C .* I_array_1000G_5C;
@@ -234,10 +193,7 @@ V_array_200G_45C = V_200G_45C * ns;
 I_array_200G_45C = I_200G_45C * np;
 P_array_200G_45C = V_array_200G_45C .* I_array_200G_45C;
 
-
-
-
-%% ----- 6. Find array MPP -----
+%% ----- 8. Find array MPP -----
 [Pmax_arr_stc, idx_arr_stc] = max(P_array_stc);
 Vmpp_arr_stc = V_array_stc(idx_arr_stc);
 Impp_arr_stc = I_array_stc(idx_arr_stc);
@@ -263,297 +219,150 @@ Vmpp_arr_200G_45C = V_array_200G_45C(idx_arr_200G_45C);
 Impp_arr_200G_45C = I_array_200G_45C(idx_arr_200G_45C);
 Pmax_arr_200G_45C = P_array_200G_45C(idx_arr_200G_45C);
 
-%% ----- 7. Module‑level I‑V plot (with full annotations) -----
-figure('Name','Ameresco Solar 200J-V Single PV Panel I‑V Characteristics','NumberTitle','off','Color','white','Position',[100,100,1000,750]);
-hold on; box on; grid on;
+%% ----- 9. Combined Module‑level I‑V & P‑V plot (top/bottom subplots) -----
+figure('Name','Ameresco Solar 200J-V PV Module Characteristics','NumberTitle','off','Color','white','Position',[100,100,1000,900]);
 
+% Top subplot: I‑V
+subplot(2,1,1);
+hold on; box on; grid on;
 plot(V_stc, I_stc, 'r', 'LineWidth',1.5, 'DisplayName',sprintf('STC (1000 W/m², 25°C)'));
 plot(V_600G, I_600G, 'b', 'LineWidth',1.5, 'DisplayName',sprintf('%.0f W/m², 25°C',G_600));
 plot(V_200G, I_200G, 'm', 'LineWidth',1.5, 'DisplayName',sprintf('%.0f W/m², 25°C',G_200));
+xlabel('Voltage (V)','FontSize',14,'FontWeight','bold');
+ylabel('Current (A)','FontSize',14,'FontWeight','bold');
+legend('Location','northeast','FontSize',12);
+title('Module I‑V Characteristics','FontSize',14,'FontWeight','bold');
+xlim([0, 46]); ylim([0, 8]);
 
-xlabel('Voltage (V)','FontSize',16,'FontWeight','bold');
-ylabel('Current (A)','Rotation',0,'FontSize',16,'FontWeight','bold');
-legend('Location','northeast','FontSize',14);
-title('Ameresco Solar 200J-V Single PV Panel I‑V Characteristics','FontSize',14,'FontWeight','bold');
-% For module I‑V
-xlim([0, 46]);
-ylim([0, 7.5]);
-
-% Annotations
+% Annotations for I‑V subplot
 xLim = xlim; yLim = ylim; xRange = diff(xLim); yRange = diff(yLim);
-
 % STC (red)
-%xline(Vmpp_mod_stc, '--r', 'LineWidth',1.5, 'HandleVisibility','off');
 yline(Impp_mod_stc, '--r', 'LineWidth',1.5, 'HandleVisibility','off');
-text(Vmpp_mod_stc + 0.02*xRange, Impp_mod_stc + 0.06*yRange, ...
+text(Vmpp_mod_stc + 0.02*xRange, Impp_mod_stc + 0.09*yRange, ...
     sprintf('V_{mpp}=%.1f V\nI_{mpp}=%.2f A', Vmpp_mod_stc, Impp_mod_stc), ...
-    'Color','r','BackgroundColor','white','FontSize',16,'FontWeight','bold',...
+    'Color','r','BackgroundColor','white','FontSize',12,'FontWeight','bold',...
     'EdgeColor','r','Margin',5,'HandleVisibility','off');
-
 % 600 W/m² (blue)
-%xline(Vmpp_mod_600G, '--b', 'LineWidth',1.5, 'HandleVisibility','off');
 yline(Impp_mod_600G, '--b', 'LineWidth',1.5, 'HandleVisibility','off');
-text(Vmpp_mod_600G + 0.03*xRange, Impp_mod_600G + 0.06*yRange, ...
+text(Vmpp_mod_600G + 0.03*xRange, Impp_mod_600G + 0.09*yRange, ...
     sprintf('V_{mpp}=%.1f V\nI_{mpp}=%.2f A', Vmpp_mod_600G, Impp_mod_600G), ...
-    'Color','b','BackgroundColor','white','FontSize',16,'FontWeight','bold',...
+    'Color','b','BackgroundColor','white','FontSize',12,'FontWeight','bold',...
     'EdgeColor','b','Margin',5,'HandleVisibility','off');
-
 % 200 W/m² (magenta)
-%xline(Vmpp_mod_200G, '--m', 'LineWidth',1.5, 'HandleVisibility','off');
 yline(Impp_mod_200G, '--m', 'LineWidth',1.5, 'HandleVisibility','off');
-text(Vmpp_mod_200G + 0.03*xRange, Impp_mod_200G + 0.06*yRange, ...
+text(Vmpp_mod_200G + 0.03*xRange, Impp_mod_200G + 0.09*yRange, ...
     sprintf('V_{mpp}=%.1f V\nI_{mpp}=%.2f A', Vmpp_mod_200G, Impp_mod_200G), ...
-    'Color','m','BackgroundColor','white','FontSize',16,'FontWeight','bold',...
+    'Color','m','BackgroundColor','white','FontSize',12,'FontWeight','bold',...
     'EdgeColor','m','Margin',5,'HandleVisibility','off');
-
-set(gca,'FontSize',16);
+set(gca,'FontSize',12);
 hold off;
 
-%% ----- 8. Module‑level P‑V plot (with annotations) -----
-figure('Name','Ameresco Solar 200J-V Single PV Panel P‑V Characteristics','NumberTitle','off','Color','white','Position',[100,100,1000,750]);
+% Bottom subplot: P‑V
+subplot(2,1,2);
 hold on; box on; grid on;
-
 plot(V_stc, P_mod_stc, 'r', 'LineWidth',1.5, 'DisplayName',sprintf('STC (1000 W/m², 25°C)'));
 plot(V_600G, P_mod_600G, 'b', 'LineWidth',1.5, 'DisplayName',sprintf('%.0f W/m², 25°C',G_600));
 plot(V_200G, P_mod_200G, 'm', 'LineWidth',1.5, 'DisplayName',sprintf('%.0f W/m², 25°C',G_200));
+xlabel('Voltage (V)','FontSize',14,'FontWeight','bold');
+ylabel('Power (W)','FontSize',14,'FontWeight','bold');
+legend('Location','northeast','FontSize',12);
+title('Module P‑V Characteristics','FontSize',14,'FontWeight','bold');
+xlim([0, 46]); ylim([0, 290]);
 
-xlabel('Voltage (V)','FontSize',16,'FontWeight','bold');
-ylabel('Power (W)','Rotation',0,'FontSize',16,'FontWeight','bold');
-legend('Location','northeast','FontSize',14);
-title('Ameresco Solar 200J-V Single PV Panel P‑V Characteristics','FontSize',14,'FontWeight','bold');
-
-% For module I‑V
-xlim([0, 47]);
-ylim([0, 270]);
-
-
-% Annotations
+% Annotations for P‑V subplot
 xLim = xlim; yLim = ylim; xRange = diff(xLim); yRange = diff(yLim);
-
 % STC (red)
-%xline(Vmpp_mod_stc, '--r', 'LineWidth',1.5, 'HandleVisibility','off');
 yline(Pmax_mod_stc, '--r', 'LineWidth',1.5, 'HandleVisibility','off');
-text(Vmpp_mod_stc + 0.03*xRange, Pmax_mod_stc + 0.06*yRange, ...
+text(Vmpp_mod_stc + 0.03*xRange, Pmax_mod_stc + 0.08*yRange, ...
     sprintf('V_{mpp}=%.1f V\nP_{mpp}=%.1f W', Vmpp_mod_stc, Pmax_mod_stc), ...
-    'Color','r','BackgroundColor','white','FontSize',16,'FontWeight','bold',...
+    'Color','r','BackgroundColor','white','FontSize',12,'FontWeight','bold',...
     'EdgeColor','r','Margin',5,'HandleVisibility','off');
-
 % 600 W/m² (blue)
-%xline(Vmpp_mod_600G, '--b', 'LineWidth',1.5, 'HandleVisibility','off');
 yline(Pmax_mod_600G, '--b', 'LineWidth',1.5, 'HandleVisibility','off');
-text(Vmpp_mod_600G + 0.03*xRange, Pmax_mod_600G + 0.06*yRange, ...
+text(Vmpp_mod_600G + 0.03*xRange, Pmax_mod_600G + 0.09*yRange, ...
     sprintf('V_{mpp}=%.1f V\nP_{mpp}=%.1f W', Vmpp_mod_600G, Pmax_mod_600G), ...
-    'Color','b','BackgroundColor','white','FontSize',16,'FontWeight','bold',...
+    'Color','b','BackgroundColor','white','FontSize',12,'FontWeight','bold',...
     'EdgeColor','b','Margin',5,'HandleVisibility','off');
-
 % 200 W/m² (magenta)
-%xline(Vmpp_mod_200G, '--m', 'LineWidth',1.5, 'HandleVisibility','off');
 yline(Pmax_mod_200G, '--m', 'LineWidth',1.5, 'HandleVisibility','off');
-text(Vmpp_mod_200G + 0.03*xRange, Pmax_mod_200G + 0.06*yRange, ...
+text(Vmpp_mod_200G + 0.03*xRange, Pmax_mod_200G + 0.09*yRange, ...
     sprintf('V_{mpp}=%.1f V\nP_{mpp}=%.1f W', Vmpp_mod_200G, Pmax_mod_200G), ...
-    'Color','m','BackgroundColor','white','FontSize',16,'FontWeight','bold',...
+    'Color','m','BackgroundColor','white','FontSize',12,'FontWeight','bold',...
     'EdgeColor','m','Margin',5,'HandleVisibility','off');
-
-set(gca,'FontSize',16);
+set(gca,'FontSize',12);
 hold off;
 
-%{
-%% ----- 9. Array‑level I‑V plot (with annotations) -----
-figure('Name','Array I‑V Characteristics','NumberTitle','off','Color','white','Position',[100,100,1000,750]);
+%% ----- 10. Combined Array‑level I‑V & P‑V plot (top/bottom subplots) -----
+figure('Name','Ameresco Solar 200J-V PV Array Characteristics','NumberTitle','off','Color','white','Position',[100,100,1000,900]);
+
+% Top subplot: Array I‑V
+subplot(2,1,1);
 hold on; box on; grid on;
-
-plot(V_array_stc, I_array_stc, 'r', 'LineWidth',1.5, 'DisplayName',sprintf('STC (1000 W/m², 25°C)'));
-plot(V_array_600G, I_array_600G, 'b', 'LineWidth',1.5, 'DisplayName',sprintf('%.0f W/m², 25°C',G_600));
-plot(V_array_200G, I_array_200G, 'm', 'LineWidth',1.5, 'DisplayName',sprintf('%.0f W/m², 25°C',G_200));
-
-xlabel('Voltage (V)','FontSize',16,'FontWeight','bold');
-ylabel('Current (A)','Rotation',0,'FontSize',16,'FontWeight','bold');
-legend('Location','northeast','FontSize',14);
-title(sprintf('Array I‑V Characteristics (%dS × %dP, %.1f kWp)', ns, np, Pmax_arr_stc/1000), ...
-      'FontSize',14,'FontWeight','bold');
-set(gca,'FontSize',16);
-
-% For module I‑V
-xlim([0, 800]);
-ylim([0, 14]);
-
-
-% Annotations
-xLim = xlim; yLim = ylim; xRange = diff(xLim); yRange = diff(yLim);
-
-% STC (red)
-%xline(Vmpp_arr_stc, '--r', 'LineWidth',1.5, 'HandleVisibility','off');
-yline(Impp_arr_stc, '--r', 'LineWidth',1.5, 'HandleVisibility','off');
-text(Vmpp_arr_stc+0.02*xRange, Impp_arr_stc+0.06*yRange, ...
-    sprintf('V_{mpp}=%.1f V\nI_{mpp}=%.1f A', Vmpp_arr_stc, Impp_arr_stc), ...
-    'Color','r','BackgroundColor','white','FontSize',16,'FontWeight','bold',...
-    'EdgeColor','r','Margin',5,'HandleVisibility','off');
-
-% 600 W/m² (blue)
-%xline(Vmpp_arr_600G, '--b', 'LineWidth',1.5, 'HandleVisibility','off');
-yline(Impp_arr_600G, '--b', 'LineWidth',1.5, 'HandleVisibility','off');
-text(Vmpp_arr_600G+0.03*xRange, Impp_arr_600G+0.06*yRange, ...
-    sprintf('V_{mpp}=%.1f V\nI_{mpp}=%.1f A', Vmpp_arr_600G, Impp_arr_600G), ...
-    'Color','b','BackgroundColor','white','FontSize',16,'FontWeight','bold',...
-    'EdgeColor','b','Margin',5,'HandleVisibility','off');
-
-% 200 W/m² (magenta)
-%xline(Vmpp_arr_200G, '--m', 'LineWidth',1.5, 'HandleVisibility','off');
-yline(Impp_arr_200G, '--m', 'LineWidth',1.5, 'HandleVisibility','off');
-text(Vmpp_arr_200G+0.03*xRange, Impp_arr_200G+0.06*yRange, ...
-    sprintf('V_{mpp}=%.1f V\nI_{mpp}=%.1f A', Vmpp_arr_200G, Impp_arr_200G), ...
-    'Color','m','BackgroundColor','white','FontSize',16,'FontWeight','bold',...
-    'EdgeColor','m','Margin',5,'HandleVisibility','off');
-
-hold off;
-
-%% ----- 10. Array‑level P‑V plot (with annotations) -----
-figure('Name','Array P‑V Characteristics','NumberTitle','off','Color','white','Position',[100,100,1000,750]);
-hold on; box on; grid on;
-
-plot(V_array_stc, P_array_stc, 'r', 'LineWidth',1.5, 'DisplayName',sprintf('STC (1000 W/m², 25°C)'));
-plot(V_array_600G, P_array_600G, 'b', 'LineWidth',1.5, 'DisplayName',sprintf('%.0f W/m², 25°C',G_600));
-plot(V_array_200G, P_array_200G, 'm', 'LineWidth',1.5, 'DisplayName',sprintf('%.0f W/m², 25°C',G_200));
-
-xlabel('Voltage (V)','FontSize',16,'FontWeight','bold');
-ylabel('Power (W)','Rotation',0,'FontSize',16,'FontWeight','bold');
-legend('Location','northeast','FontSize',14);
-title(sprintf('Array P‑V Characteristics (%dS × %dP, %.1f kWp)', ns, np, Pmax_arr_stc/1000), ...
-      'FontSize',14,'FontWeight','bold');
-set(gca,'FontSize',16);
-
-
-% For module I‑V
-xlim([0, 800]);
-ylim([0, 8000]);
-
-% Annotations
-xLim = xlim; yLim = ylim; xRange = diff(xLim); yRange = diff(yLim);
-
-% STC (red)
-%xline(Vmpp_arr_stc, '--r', 'LineWidth',1.5, 'HandleVisibility','off');
-yline(Pmax_arr_stc, '--r', 'LineWidth',1.5, 'HandleVisibility','off');
-text(Vmpp_arr_stc+0.02*xRange, Pmax_arr_stc+0.06*yRange, ...
-    sprintf('V_{mpp}=%.1f V\nP_{mpp}=%.1f W', Vmpp_arr_stc, Pmax_arr_stc), ...
-    'Color','r','BackgroundColor','white','FontSize',16,'FontWeight','bold',...
-    'EdgeColor','r','Margin',5,'HandleVisibility','off');
-
-% 600 W/m² (blue)
-%xline(Vmpp_arr_600G, '--b', 'LineWidth',1.5, 'HandleVisibility','off');
-yline(Pmax_arr_600G, '--b', 'LineWidth',1.5, 'HandleVisibility','off');
-text(Vmpp_arr_600G+0.03*xRange, Pmax_arr_600G+0.06*yRange, ...
-    sprintf('V_{mpp}=%.1f V\nP_{mpp}=%.1f W', Vmpp_arr_600G, Pmax_arr_600G), ...
-    'Color','b','BackgroundColor','white','FontSize',16,'FontWeight','bold',...
-    'EdgeColor','b','Margin',5,'HandleVisibility','off');
-
-% 200 W/m² (magenta)
-%xline(Vmpp_arr_200G, '--m', 'LineWidth',1.5, 'HandleVisibility','off');
-yline(Pmax_arr_200G, '--m', 'LineWidth',1.5, 'HandleVisibility','off');
-text(Vmpp_arr_200G+0.03*xRange, Pmax_arr_200G+0.06*yRange, ...
-    sprintf('V_{mpp}=%.1f V\nP_{mpp}=%.1f W', Vmpp_arr_200G, Pmax_arr_200G), ...
-    'Color','m','BackgroundColor','white','FontSize',16,'FontWeight','bold',...
-    'EdgeColor','m','Margin',5,'HandleVisibility','off');
-
-hold off;
-
-%}
-
-
-%% ----- 9. Array‑level I‑V plot (with annotations) -----
-figure('Name','Ameresco Solar 200J-V PV Array I‑V Characteristics','NumberTitle','off','Color','white','Position',[100,100,1000,750]);
-hold on; box on; grid on;
-
 plot(V_array_stc, I_array_stc, 'r', 'LineWidth',1.5, 'DisplayName',sprintf('STC (1000 W/m², 25°C)'));
 plot(V_array_1000G_5C, I_array_1000G_5C, 'b', 'LineWidth',1.5, 'DisplayName',sprintf('%.0f W/m², 5°C',G_1000));
 plot(V_array_200G_45C, I_array_200G_45C, 'm', 'LineWidth',1.5, 'DisplayName',sprintf('%.0f W/m², 45°C',G_200));
-
-xlabel('Voltage (V)','FontSize',16,'FontWeight','bold');
-ylabel('Current (A)','Rotation',0,'FontSize',16,'FontWeight','bold');
-legend('Location','northeast','FontSize',14);
-title(sprintf('Ameresco Solar 200J-V PV Array I‑V Characteristics (%dS × %dP, %.1f kWp)', ns, np, Pmax_arr_stc/1000), ...
+xlabel('Voltage (V)','FontSize',14,'FontWeight','bold');
+ylabel('Current (A)','FontSize',14,'FontWeight','bold');
+legend('Location','northeast','FontSize',12);
+title(sprintf('Array I‑V Characteristics (%dS × %dP, %.1f kWp)', ns, np, Pmax_arr_stc/1000), ...
       'FontSize',14,'FontWeight','bold');
-set(gca,'FontSize',16);
+xlim([0, 900]); ylim([0, 16]);
 
-% For module I‑V
-xlim([0, 800]);
-ylim([0, 15]);
-
-
-% Annotations
+% Annotations for array I‑V
 xLim = xlim; yLim = ylim; xRange = diff(xLim); yRange = diff(yLim);
-
 % STC (red)
-%xline(Vmpp_arr_stc, '--r', 'LineWidth',1.5, 'HandleVisibility','off');
 yline(Impp_arr_stc, '--r', 'LineWidth',1.5, 'HandleVisibility','off');
-text(Vmpp_arr_stc+0.10*xRange, Impp_arr_stc-0.06*yRange, ...
+text(Vmpp_arr_stc+0.01*xRange, Impp_arr_stc+0.09*yRange, ...
     sprintf('V_{mpp}=%.1f V\nI_{mpp}=%.1f A', Vmpp_arr_stc, Impp_arr_stc), ...
-    'Color','r','BackgroundColor','white','FontSize',16,'FontWeight','bold',...
+    'Color','r','BackgroundColor','white','FontSize',12,'FontWeight','bold',...
     'EdgeColor','r','Margin',5,'HandleVisibility','off');
-
 % 1000 W/m², 5°C (blue)
-%xline(Vmpp_arr_600G, '--b', 'LineWidth',1.5, 'HandleVisibility','off');
 yline(Impp_arr_1000G_5C, '--b', 'LineWidth',1.5, 'HandleVisibility','off');
-text(Vmpp_arr_1000G_5C+0.03*xRange, Impp_arr_1000G_5C+0.06*yRange, ...
+text(Vmpp_arr_1000G_5C+0.10*xRange, Impp_arr_1000G_5C-0.09*yRange, ...
     sprintf('V_{mpp}=%.1f V\nI_{mpp}=%.1f A', Vmpp_arr_1000G_5C, Impp_arr_1000G_5C), ...
-    'Color','b','BackgroundColor','white','FontSize',16,'FontWeight','bold',...
+    'Color','b','BackgroundColor','white','FontSize',12,'FontWeight','bold',...
     'EdgeColor','b','Margin',5,'HandleVisibility','off');
-
 % 200 W/m², 45°C (magenta)
-%xline(Vmpp_arr_200G, '--m', 'LineWidth',1.5, 'HandleVisibility','off');
 yline(Impp_arr_200G_45C, '--m', 'LineWidth',1.5, 'HandleVisibility','off');
-text(Vmpp_arr_200G_45C+0.03*xRange, Impp_arr_200G_45C+0.06*yRange, ...
-    sprintf('V_{mpp}=%.1f V\nI_{mpp}=%.1f A', Vmpp_arr_200G_45C, Impp_arr_200G), ...
-    'Color','m','BackgroundColor','white','FontSize',16,'FontWeight','bold',...
+text(Vmpp_arr_200G_45C+0.03*xRange, Impp_arr_200G_45C+0.09*yRange, ...
+    sprintf('V_{mpp}=%.1f V\nI_{mpp}=%.1f A', Vmpp_arr_200G_45C, Impp_arr_200G_45C), ...
+    'Color','m','BackgroundColor','white','FontSize',12,'FontWeight','bold',...
     'EdgeColor','m','Margin',5,'HandleVisibility','off');
-
+set(gca,'FontSize',12);
 hold off;
 
-
-%% ----- 10. Array‑level P‑V plot (with annotations) -----
-figure('Name','Ameresco Solar 200J-V PV Array I‑V Characteristics','NumberTitle','off','Color','white','Position',[100,100,1000,750]);
+% Bottom subplot: Array P‑V
+subplot(2,1,2);
 hold on; box on; grid on;
-
 plot(V_array_stc, P_array_stc, 'r', 'LineWidth',1.5, 'DisplayName',sprintf('STC (1000 W/m², 25°C)'));
 plot(V_array_1000G_5C, P_array_1000G_5C, 'b', 'LineWidth',1.5, 'DisplayName',sprintf('%.0f W/m², 5°C',G_1000));
 plot(V_array_200G_45C, P_array_200G_45C, 'm', 'LineWidth',1.5, 'DisplayName',sprintf('%.0f W/m², 45°C',G_200));
-
-xlabel('Voltage (V)','FontSize',16,'FontWeight','bold');
-ylabel('Power (W)','Rotation',0,'FontSize',16,'FontWeight','bold');
-legend('Location','northeast','FontSize',14);
-title(sprintf('Ameresco Solar 200J-V PV Array P‑V Characteristics (%dS × %dP, %.1f kWp)', ns, np, Pmax_arr_stc/1000), ...
+xlabel('Voltage (V)','FontSize',14,'FontWeight','bold');
+ylabel('Power (W)','FontSize',14,'FontWeight','bold');
+legend('Location','northeast','FontSize',12);
+title(sprintf('Array P‑V Characteristics (%dS × %dP, %.1f kWp)', ns, np, Pmax_arr_stc/1000), ...
       'FontSize',14,'FontWeight','bold');
-set(gca,'FontSize',16);
+xlim([0, 900]); ylim([0, 10000]);
 
-
-% For module I‑V
-xlim([0, 800]);
-ylim([0, 9000]);
-
-% Annotations
+% Annotations for array P‑V
 xLim = xlim; yLim = ylim; xRange = diff(xLim); yRange = diff(yLim);
-
 % STC (red)
-%xline(Vmpp_arr_stc, '--r', 'LineWidth',1.5, 'HandleVisibility','off');
 yline(Pmax_arr_stc, '--r', 'LineWidth',1.5, 'HandleVisibility','off');
-text(Vmpp_arr_stc+0.12*xRange, Pmax_arr_stc-0.06*yRange, ...
+text(Vmpp_arr_stc-0.12*xRange, Pmax_arr_stc+0.09*yRange, ...
     sprintf('V_{mpp}=%.1f V\nP_{mpp}=%.1f W', Vmpp_arr_stc, Pmax_arr_stc), ...
-    'Color','r','BackgroundColor','white','FontSize',16,'FontWeight','bold',...
+    'Color','r','BackgroundColor','white','FontSize',12,'FontWeight','bold',...
     'EdgeColor','r','Margin',5,'HandleVisibility','off');
-
 % 1000 W/m², 5°C (blue)
-%xline(Vmpp_arr_600G, '--b', 'LineWidth',1.5, 'HandleVisibility','off');
 yline(Pmax_arr_1000G_5C, '--b', 'LineWidth',1.5, 'HandleVisibility','off');
-text(Vmpp_arr_1000G_5C+0.03*xRange, Pmax_arr_1000G_5C+0.06*yRange, ...
+text(Vmpp_arr_1000G_5C+0.03*xRange, Pmax_arr_1000G_5C+0.08*yRange, ...
     sprintf('V_{mpp}=%.1f V\nP_{mpp}=%.1f W', Vmpp_arr_1000G_5C, Pmax_arr_1000G_5C), ...
-    'Color','b','BackgroundColor','white','FontSize',16,'FontWeight','bold',...
+    'Color','b','BackgroundColor','white','FontSize',12,'FontWeight','bold',...
     'EdgeColor','b','Margin',5,'HandleVisibility','off');
-
 % 200 W/m², 45°C (magenta)
-%xline(Vmpp_arr_200G, '--m', 'LineWidth',1.5, 'HandleVisibility','off');
 yline(Pmax_arr_200G_45C, '--m', 'LineWidth',1.5, 'HandleVisibility','off');
-text(Vmpp_arr_200G_45C+0.03*xRange, Pmax_arr_200G_45C+0.06*yRange, ...
+text(Vmpp_arr_200G_45C+0.03*xRange, Pmax_arr_200G_45C+0.09*yRange, ...
     sprintf('V_{mpp}=%.1f V\nP_{mpp}=%.1f W', Vmpp_arr_200G_45C, Pmax_arr_200G_45C), ...
-    'Color','m','BackgroundColor','white','FontSize',16,'FontWeight','bold',...
+    'Color','m','BackgroundColor','white','FontSize',12,'FontWeight','bold',...
     'EdgeColor','m','Margin',5,'HandleVisibility','off');
-
+set(gca,'FontSize',12);
 hold off;
