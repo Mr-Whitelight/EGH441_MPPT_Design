@@ -42,7 +42,7 @@ function [Iph, Vt, Rs, Io] = FourParaSTC(Impp, Vmpp, Isc, Voc)
     Io = Isc / exp(Voc/Vt);
 end
 
-[Iph, Vt, Rs, Io] = FourParaSTC(Impp, Vmpp, Isc, Voc);
+[Iph, Vt, Rs, Io] = FourParaSTC(Impp, Vmpp, Isc, Voc)
 
 %% ----- 2. Function to correct module parameters for T and G -----
 function [Iscgt, Vocgt, Voct, Vtt, Iot] = FourParaCorr(Isc, Voc, ki, kv, T, Tstc, Vt, G, Gstc)
